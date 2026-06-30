@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>りんごの計算</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: #fff4dc;
+      color: #222;
+    }
+
+    body {
+      padding: 10px;
+    }
+
+    .app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-bar {
+      height: 58px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 6px 10px;
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+      font-size: 24px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    input,
+    select {
+      height: 42px;
+      border: 4px solid #ffbf47;
+      border-radius: 12px;
+      background: #fffaf0;
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      outline: none;
+    }
+
+    input {
+      width: 64px;
+    }
+
+    select {
+      width: 62px;
+      appearance: none;
+      -webkit-appearance: none;
+      text-align-last: center;
+    }
+
+    .note {
+      font-size: 17px;
+      color: #d62828;
+      font-weight: 900;
+      margin-left: 8px;
+      display: none;
+    }
+
+    .sentence {
+      flex-shrink: 0;
+      text-align: center;
+      font-size: clamp(34px, 5vw, 60px);
+      font-weight: 1000;
+      line-height: 1.05;
+    }
+
+    .boxes {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .box {
+      position: relative;
+      height: 100%;
+      min-height: 180px;
+      background: #ffffff;
+      border-radius: 34px;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .box.left {
+      border: 8px solid #ff8b8b;
+    }
+
+    .box.right {
+      border: 8px solid #83d98f;
+    }
+
+    .operator-big {
+      font-size: clamp(70px, 10vw, 130px);
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .question {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 4px 10px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: clamp(42px, 6vw, 82px);
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .apple-area {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      place-items: center;
+      padding-right: 76px;
+    }
+
+    .box.left .apple-area {
+      padding-right: 0;
+    }
+
+    .apple {
+      font-size: clamp(42px, 6vw, 78px);
+      line-height: 1;
+      user-select: none;
+      animation: pop 0.18s ease-out both;
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .answer-row {
+      height: 94px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding-bottom: 4px;
+    }
+
+    button {
+      height: 78px;
+      padding: 0 48px;
+      border: 7px solid #e6a900;
+      border-radius: 26px;
+      background: #ffe066;
+      font-size: 46px;
+      font-weight: 1000;
+      box-shadow: 0 5px 0 #c98e00;
+    }
+
+    button:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #c98e00;
+    }
+
+    .equals,
+    .answer {
+      font-size: clamp(58px, 8vw, 96px);
+      font-weight: 1000;
+      line-height: 1;
+    }
+
+    .answer {
+      min-width: 150px;
+      color: #0066cc;
+      text-align: left;
+    }
+
+    @media (max-height: 520px) {
+      .input-bar {
+        height: 48px;
+        font-size: 20px;
+      }
+
+      input,
+      select {
+        height: 36px;
+        font-size: 24px;
+      }
+
+      .answer-row {
+        height: 76px;
+      }
+
+      button {
+        height: 62px;
+        font-size: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="input-bar">
+      <span>りんご</span>
+      <input id="leftInput" type="number" min="0" max="30" value="3" inputmode="numeric" />
+      <span>個</span>
+
+      <select id="operatorInput">
+        <option value="+">＋</option>
+        <option value="-">−</option>
+      </select>
+
+      <span>りんご</span>
+      <input id="rightInput" type="number" min="0" max="30" value="2" inputmode="numeric" />
+      <span>個</span>
+      <span id="note" class="note">左が小さいので「−」</span>
+    </div>
+
+    <div id="sentence" class="sentence">りんご3個 ＋ りんご2個あります。</div>
+
+    <div class="boxes">
+      <div class="box left">
+        <div id="leftApples" class="apple-area"></div>
+      </div>
+
+      <div id="operatorBig" class="operator-big">＋</div>
+
+      <div class="box right">
+        <div id="rightApples" class="apple-area"></div>
+        <div class="question">＝？</div>
+      </div>
+    </div>
+
+    <div class="answer-row">
+      <button id="answerButton">答え</button>
+      <div class="equals">＝</div>
+      <div id="answer" class="answer"></div>
+    </div>
+  </div>
+
+  <script>
+    const leftInput = document.getElementById("leftInput");
+    const rightInput = document.getElementById("rightInput");
+    const operatorInput = document.getElementById("operatorInput");
+    const sentence = document.getElementById("sentence");
+    const operatorBig = document.getElementById("operatorBig");
+    const leftApples = document.getElementById("leftApples");
+    const rightApples = document.getElementById("rightApples");
+    const answerButton = document.getElementById("answerButton");
+    const answerBox = document.getElementById("answer");
+    const note = document.getElementById("note");
+
+    function cleanNumber(value) {
+      const num = parseInt(value, 10);
+      if (Number.isNaN(num) || num < 0) return 0;
+      if (num > 30) return 30;
+      return num;
+    }
+
+    function getValues() {
+      const left = cleanNumber(leftInput.value);
+      const right = cleanNumber(rightInput.value);
+      let operator = operatorInput.value === "-" ? "−" : "＋";
+
+      if (left < right) {
+        operator = "−";
+      }
+
+      return { left, right, operator };
+    }
+
+    function drawApples(target, count, apple) {
+      target.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement("span");
+        span.className = "apple";
+        span.textContent = apple;
+        span.style.animationDelay = `${i * 0.015}s`;
+        target.appendChild(span);
+      }
+    }
+
+    function updateScreen() {
+      const { left, right, operator } = getValues();
+
+      leftInput.value = left;
+      rightInput.value = right;
+      operatorInput.value = operator === "−" ? "-" : "+";
+
+      sentence.textContent = `りんご${left}個 ${operator} りんご${right}個あります。`;
+      operatorBig.textContent = operator;
+      note.style.display = left < right ? "inline" : "none";
+
+      drawApples(leftApples, left, "🍎");
+      drawApples(rightApples, right, "🍏");
+
+      answerBox.textContent = "";
+    }
+
+    function showAnswer() {
+      const { left, right, operator } = getValues();
+      const result = operator === "＋" ? left + right : left - right;
+      answerBox.textContent = result;
+      answerBox.animate(
+        [
+          { transform: "scale(0.5)", opacity: 0 },
+          { transform: "scale(1.15)", opacity: 1 },
+          { transform: "scale(1)", opacity: 1 }
+        ],
+        { duration: 300, easing: "ease-out" }
+      );
+    }
+
+    leftInput.addEventListener("input", updateScreen);
+    rightInput.addEventListener("input", updateScreen);
+    operatorInput.addEventListener("change", updateScreen);
+    answerButton.addEventListener("click", showAnswer);
+
+    updateScreen();
+  </script>
+</body>
+</html>

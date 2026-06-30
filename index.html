@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>カード神経衰弱</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#fff4c7;font-family:"Hiragino Maru Gothic ProN",sans-serif;overflow:hidden}
+#wrap{height:100vh;padding:2px 6px;display:flex;flex-direction:column;align-items:center}
+#top{display:flex;justify-content:center;gap:18px;font-size:40px;font-weight:bold;line-height:1;margin:2px 0;width:100%}
+#message{min-width:340px;color:#e85b00;text-align:center}
+#game{display:grid;justify-content:center;align-content:center;flex:1;width:100%;gap:6px}
+#game.normal{grid-template-columns:repeat(6,minmax(0,1fr));max-width:1320px}
+#game.honki{grid-template-columns:repeat(8,minmax(0,1fr));max-width:1600px}
+.card{aspect-ratio:2/3;perspective:900px}
+.inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:.25s}
+.card.open .inner,.card.done .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden}
+.front{transform:rotateY(180deg)}
+.face img{width:100%;height:100%;object-fit:contain;display:block}
+.card.done{animation:pop .2s}
+@keyframes pop{50%{transform:scale(1.08)}}
+#buttons{display:flex;gap:10px;margin:2px}
+button{font-size:32px;padding:8px 40px;border:0;border-radius:16px;color:#fff;background:#ff8a3d;font-weight:bold}
+#modeBtn{background:#d44}
+#clear{display:none;position:fixed;inset:0;background:#fff4cfe8;align-items:center;justify-content:center;flex-direction:column}
+#clear div{font-size:64px;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="wrap">
+<div id="top"><div id="remain"></div><div id="message"></div><div id="miss"></div></div>
+<div id="game"></div>
+<div id="buttons">
+<button onclick="start(currentMode)">もう一回</button>
+<button id="modeBtn" onclick="toggleMode()">🔥本気</button>
+</div>
+</div>
+<div id="clear"><div>クリア！</div><button onclick="start(currentMode)">もう一回</button></div>
+<script>
+const flip=new Audio("meku.mp3");
+const ok=new Audio("sei.mp3");
+flip.preload="auto";ok.preload="auto";
+const normal=["card-02.png","card-03.png","card-04.png","card-05.png","card-06.png","card-07.png","card-08.png","card-09.png","card-10.png"];
+const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
+let currentMode="normal",imgs=normal,f=null,s=null,lock=false,clear=0,miss=0;
+function toggleMode(){start(currentMode=="normal"?"honki":"normal")}
+function start(mode="normal"){
+currentMode=mode;imgs=mode=="honki"?honki:normal;
+modeBtn.textContent=mode=="normal"?"🔥本気":"😊通常";
+message.textContent=mode=="normal"?"同じカードを見つけよう！":"本気モード！";
+game.className=mode;game.innerHTML="";clear=0;miss=0;f=s=null;lock=false;
+document.getElementById("clear").style.display="none";
+upd();
+let c=[...imgs,...imgs].sort(()=>Math.random()-.5);
+c.forEach(im=>{
+let d=document.createElement("div");
+d.className="card";d.dataset.i=im;
+d.innerHTML=`<div class="inner"><div class="face"><img src="card-01.png"></div><div class="face front"><img src="${im}"></div></div>`;
+d.onclick=()=>open(d);game.appendChild(d);
+});
+}
+function open(c){
+if(lock||c.classList.contains("open")||c.classList.contains("done"))return;
+flip.currentTime=0;flip.play().catch(()=>{});
+c.classList.add("open");
+if(!f){f=c;return;}
+s=c;lock=true;
+if(f.dataset.i==s.dataset.i){
+ok.currentTime=0;ok.play().catch(()=>{});
+f.classList.add("done");s.classList.add("done");clear++;f=s=null;lock=false;message.textContent="あたり！";upd();
+if(clear==imgs.length)setTimeout(()=>document.getElementById("clear").style.display="flex",300);
+}else{
+miss++;message.textContent="ちがうよ！";upd();
+setTimeout(()=>{
+f.classList.remove("open");s.classList.remove("open");
+f=s=null;lock=false;
+message.textContent=currentMode=="normal"?"同じカードを見つけよう！":"本気モード！";
+},700);
+}
+}
+function upd(){
+remain.textContent="のこり"+(imgs.length-clear)+"組";
+miss.textContent="ミス"+miss;
+}
+start();
+</script>
+</body></html>
