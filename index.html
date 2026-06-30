@@ -155,36 +155,37 @@ let lock=false;
 let clearCount=0;
 let missCount=0;
 
-// iPad Safari対策：最初のタップ音を完全に鳴らさない版
-// 1回目のタップは音声許可のきっかけだけにして、実際の音は2回目以降に鳴らす。
-const flipPool=[
-  new Audio("meku.mp3"),
-  new Audio("meku.mp3"),
-  new Audio("meku.mp3")
-];
-const okPool=[
-  new Audio("sei.mp3"),
-  new Audio("sei.mp3"),
-  new Audio("sei.mp3")
-];
-
+const flipPool=[new Audio("meku.mp3"),new Audio("meku.mp3"),new Audio("meku.mp3")];
+const okPool=[new Audio("sei.mp3"),new Audio("sei.mp3"),new Audio("sei.mp3")];
 let flipIndex=0;
 let okIndex=0;
-let firstSoundSkip=true;
+let soundReady=false;
 
 [...flipPool,...okPool].forEach(a=>{
-  a.preload="metadata";
+  a.preload="auto";
   a.load();
 });
 
-function playAudioFromPool(pool,indexName){
-  const a=indexName==="flip" ? pool[flipIndex] : pool[okIndex];
+function prepareSound(){
+  if(soundReady)return;
+  soundReady=true;
+  [...flipPool,...okPool].forEach(a=>{
+    const v=a.volume;
+    a.volume=0;
+    a.play().then(()=>{
+      a.pause();
+      a.currentTime=0;
+      a.volume=v;
+    }).catch(()=>{a.volume=v;});
+  });
+}
+document.addEventListener("touchstart",prepareSound,{once:true});
+document.addEventListener("mousedown",prepareSound,{once:true});
 
-  if(indexName==="flip"){
-    flipIndex=(flipIndex+1)%pool.length;
-  }else{
-    okIndex=(okIndex+1)%pool.length;
-  }
+function playFromPool(pool,indexName){
+  const a=pool[indexName==="flip"?flipIndex:okIndex];
+  if(indexName==="flip")flipIndex=(flipIndex+1)%pool.length;
+  else okIndex=(okIndex+1)%pool.length;
 
   try{
     a.pause();
@@ -195,18 +196,39 @@ function playAudioFromPool(pool,indexName){
 }
 
 function playFlip(){
-  // iPadで最初にバババッと鳴るのを防ぐため、最初の1回だけ完全に無音にする
-  if(firstSoundSkip){
-    firstSoundSkip=false;
-    return;
-  }
-  playAudioFromPool(flipPool,"flip");
+  playFromPool(flipPool,"flip");
 }
 
 function playOk(){
+  setTimeout(()=>playFromPool(okPool,"ok"),220);
+}
+
+function fitCards(){
+  const cols=currentMode==="honki"?8:6;
+  const rows=3;
+  const wrap=document.getElementById("wrap");
+  const top=document.getElementById("top");
+  const buttons=document.getElementById("buttons");
+
+  const gap=4;
+
+  // 音まわり超シンプル版
+// 最初に音を準備再生しないので「バババッ」が出にくい
+function playFlip(){
+  try{
+    const a=new Audio("meku.mp3");
+    a.play().catch(()=>{});
+  }catch(e){}
+}
+
+function playOk(){
+  // めくる音と重ならないように少し遅らせる
   setTimeout(()=>{
-    playAudioFromPool(okPool,"ok");
-  },360);
+    try{
+      const a=new Audio("sei.mp3");
+      a.play().catch(()=>{});
+    }catch(e){}
+  },420);
 }
 
 
