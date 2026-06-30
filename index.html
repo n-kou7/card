@@ -2,55 +2,161 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
 <title>カード神経衰弱</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#fff4c7;font-family:"Hiragino Maru Gothic ProN",sans-serif;overflow:hidden}
-#wrap{height:100vh;padding:2px 6px;display:flex;flex-direction:column;align-items:center}
-#top{display:flex;justify-content:center;gap:18px;font-size:40px;font-weight:bold;line-height:1;margin:2px 0;width:100%}
-#message{min-width:340px;color:#e85b00;text-align:center}
-#game{display:grid;justify-content:center;align-content:center;flex:1;width:100%;gap:6px}
-#game.normal{grid-template-columns:repeat(6,minmax(0,1fr));max-width:1320px}
-#game.honki{grid-template-columns:repeat(8,minmax(0,1fr));max-width:1600px}
-.card{aspect-ratio:2/3;perspective:900px}
-.inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:.25s}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff4c7}
+body{
+  font-family:"Hiragino Maru Gothic ProN","Arial",sans-serif;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+#wrap{
+  width:100vw;
+  height:100dvh;
+  padding:2px 6px 3px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+}
+#top{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  font-size:clamp(28px,4.2vh,40px);
+  font-weight:bold;
+  line-height:1;
+  margin:0;
+  white-space:nowrap;
+}
+#message{
+  min-width:300px;
+  color:#e85b00;
+  text-align:center;
+}
+#game{
+  display:grid;
+  justify-content:center;
+  align-content:center;
+  width:100%;
+  flex:1;
+  gap:var(--gap,5px);
+  overflow:hidden;
+}
+#game.normal{
+  grid-template-columns:repeat(6,var(--cardW));
+  grid-template-rows:repeat(3,var(--cardH));
+}
+#game.honki{
+  grid-template-columns:repeat(8,var(--cardW));
+  grid-template-rows:repeat(3,var(--cardH));
+}
+.card{
+  width:var(--cardW);
+  height:var(--cardH);
+  perspective:900px;
+}
+.inner{
+  width:100%;
+  height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform .25s;
+}
 .card.open .inner,.card.done .inner{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden}
+.face{
+  position:absolute;
+  inset:0;
+  backface-visibility:hidden;
+}
 .front{transform:rotateY(180deg)}
-.face img{width:100%;height:100%;object-fit:contain;display:block}
+.face img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
 .card.done{animation:pop .2s}
-@keyframes pop{50%{transform:scale(1.08)}}
-#buttons{display:flex;gap:10px;margin:2px}
-button{font-size:32px;padding:8px 40px;border:0;border-radius:16px;color:#fff;background:#ff8a3d;font-weight:bold}
+@keyframes pop{50%{transform:scale(1.06)}}
+#buttons{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin:1px 0 0;
+  flex-shrink:0;
+}
+button{
+  font-size:clamp(24px,4vh,34px);
+  line-height:1;
+  padding:7px 34px;
+  border:0;
+  border-radius:16px;
+  color:white;
+  background:#ff8a3d;
+  font-weight:bold;
+}
 #modeBtn{background:#d44}
-#clear{display:none;position:fixed;inset:0;background:#fff4cfe8;align-items:center;justify-content:center;flex-direction:column}
-#clear div{font-size:64px;font-weight:bold}
+#clear{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#fff4cfe8;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:10;
+}
+#clear div{
+  font-size:64px;
+  font-weight:bold;
+  margin-bottom:18px;
+}
 </style>
 </head>
 <body>
 <div id="wrap">
-<div id="top"><div id="remain"></div><div id="message"></div><div id="miss"></div></div>
-<div id="game"></div>
-<div id="buttons">
-<button onclick="start(currentMode)">もう一回</button>
-<button id="modeBtn" onclick="toggleMode()">🔥本気</button>
-</div>
-</div>
-<div id="clear"><div>クリア！</div><button onclick="start(currentMode)">もう一回</button></div>
-<script>
-// iPad Safariで安定しやすいように、同じ音を複数用意して交互に鳴らす
-const flipPool=[
-  new Audio("meku.mp3"),
-  new Audio("meku.mp3"),
-  new Audio("meku.mp3")
-];
-const okPool=[
-  new Audio("sei.mp3"),
-  new Audio("sei.mp3"),
-  new Audio("sei.mp3")
-];
+  <div id="top">
+    <div id="remain"></div>
+    <div id="message"></div>
+    <div id="miss"></div>
+  </div>
 
+  <div id="game"></div>
+
+  <div id="buttons">
+    <button onclick="start(currentMode)">もう一回</button>
+    <button id="modeBtn" onclick="toggleMode()">🔥本気</button>
+  </div>
+</div>
+
+<div id="clear">
+  <div>クリア！</div>
+  <button onclick="start(currentMode)">もう一回</button>
+</div>
+
+<script>
+const normal=[
+  "card-02.png","card-03.png","card-04.png",
+  "card-05.png","card-06.png","card-07.png",
+  "card-08.png","card-09.png","card-10.png"
+];
+const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
+
+let currentMode="normal";
+let imgs=normal;
+let first=null;
+let second=null;
+let lock=false;
+let clearCount=0;
+let missCount=0;
+
+const flipPool=[new Audio("meku.mp3"),new Audio("meku.mp3"),new Audio("meku.mp3")];
+const okPool=[new Audio("sei.mp3"),new Audio("sei.mp3"),new Audio("sei.mp3")];
 let flipIndex=0;
 let okIndex=0;
 let soundReady=false;
@@ -63,27 +169,23 @@ let soundReady=false;
 function prepareSound(){
   if(soundReady)return;
   soundReady=true;
-
-  // iPadの音声ロック解除用。最初のタップで無音に近い状態で一瞬だけ再生する
   [...flipPool,...okPool].forEach(a=>{
-    const oldVol=a.volume;
+    const v=a.volume;
     a.volume=0;
     a.play().then(()=>{
       a.pause();
       a.currentTime=0;
-      a.volume=oldVol;
-    }).catch(()=>{
-      a.volume=oldVol;
-    });
+      a.volume=v;
+    }).catch(()=>{a.volume=v;});
   });
 }
-
 document.addEventListener("touchstart",prepareSound,{once:true});
 document.addEventListener("mousedown",prepareSound,{once:true});
 
-function playFlip(){
-  const a=flipPool[flipIndex];
-  flipIndex=(flipIndex+1)%flipPool.length;
+function playFromPool(pool,indexName){
+  const a=pool[indexName==="flip"?flipIndex:okIndex];
+  if(indexName==="flip")flipIndex=(flipIndex+1)%pool.length;
+  else okIndex=(okIndex+1)%pool.length;
 
   try{
     a.pause();
@@ -93,63 +195,136 @@ function playFlip(){
   }catch(e){}
 }
 
+function playFlip(){
+  playFromPool(flipPool,"flip");
+}
+
 function playOk(){
-  // めくり音と同時すぎるとiPadでsei.mp3が無視されることがあるので少しだけ遅らせる
-  setTimeout(()=>{
-    const a=okPool[okIndex];
-    okIndex=(okIndex+1)%okPool.length;
-
-    try{
-      a.pause();
-      a.currentTime=0;
-      const p=a.play();
-      if(p)p.catch(()=>{});
-    }catch(e){}
-  },120);
+  setTimeout(()=>playFromPool(okPool,"ok"),220);
 }
 
-const normal=["card-02.png","card-03.png","card-04.png","card-05.png","card-06.png","card-07.png","card-08.png","card-09.png","card-10.png"];
-const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
-let currentMode="normal",imgs=normal,f=null,s=null,lock=false,clear=0,miss=0;
-function toggleMode(){start(currentMode=="normal"?"honki":"normal")}
+function fitCards(){
+  const cols=currentMode==="honki"?8:6;
+  const rows=3;
+  const wrap=document.getElementById("wrap");
+  const top=document.getElementById("top");
+  const buttons=document.getElementById("buttons");
+
+  const gap=5;
+  const usableW=wrap.clientWidth-12;
+  const usableH=wrap.clientHeight-top.offsetHeight-buttons.offsetHeight-10;
+
+  let cardH=(usableH-gap*(rows-1))/rows;
+  let cardW=cardH*2/3;
+
+  const maxW=(usableW-gap*(cols-1))/cols;
+  if(cardW>maxW){
+    cardW=maxW;
+    cardH=cardW*3/2;
+  }
+
+  document.documentElement.style.setProperty("--cardW",Math.floor(cardW)+"px");
+  document.documentElement.style.setProperty("--cardH",Math.floor(cardH)+"px");
+  document.documentElement.style.setProperty("--gap",gap+"px");
+}
+
+window.addEventListener("resize",fitCards);
+window.addEventListener("orientationchange",()=>setTimeout(fitCards,300));
+
+function toggleMode(){
+  start(currentMode==="normal"?"honki":"normal");
+}
+
 function start(mode="normal"){
-currentMode=mode;imgs=mode=="honki"?honki:normal;
-modeBtn.textContent=mode=="normal"?"🔥本気":"😊通常";
-message.textContent=mode=="normal"?"同じカードを見つけよう！":"本気モード！";
-game.className=mode;game.innerHTML="";clear=0;miss=0;f=s=null;lock=false;
-document.getElementById("clear").style.display="none";
-upd();
-let c=[...imgs,...imgs].sort(()=>Math.random()-.5);
-c.forEach(im=>{
-let d=document.createElement("div");
-d.className="card";d.dataset.i=im;
-d.innerHTML=`<div class="inner"><div class="face"><img src="card-01.png"></div><div class="face front"><img src="${im}"></div></div>`;
-d.onclick=()=>open(d);game.appendChild(d);
-});
+  currentMode=mode;
+  imgs=mode==="honki"?honki:normal;
+
+  modeBtn.textContent=mode==="normal"?"🔥本気":"😊通常";
+  message.textContent=mode==="normal"?"同じカードを見つけよう！":"本気モード！";
+
+  game.className=mode;
+  game.innerHTML="";
+  clearCount=0;
+  missCount=0;
+  first=null;
+  second=null;
+  lock=false;
+
+  document.getElementById("clear").style.display="none";
+  updateInfo();
+
+  const cards=[...imgs,...imgs].sort(()=>Math.random()-.5);
+
+  cards.forEach(im=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.dataset.i=im;
+    card.innerHTML=
+      `<div class="inner">
+        <div class="face"><img src="card-01.png"></div>
+        <div class="face front"><img src="${im}"></div>
+      </div>`;
+    card.onclick=()=>openCard(card);
+    game.appendChild(card);
+  });
+
+  requestAnimationFrame(fitCards);
 }
-function open(c){
-if(lock||c.classList.contains("open")||c.classList.contains("done"))return;
-playFlip();
-c.classList.add("open");
-if(!f){f=c;return;}
-s=c;lock=true;
-if(f.dataset.i==s.dataset.i){
-playOk();
-f.classList.add("done");s.classList.add("done");clear++;f=s=null;lock=false;message.textContent="あたり！";upd();
-if(clear==imgs.length)setTimeout(()=>document.getElementById("clear").style.display="flex",300);
-}else{
-miss++;message.textContent="ちがうよ！";upd();
-setTimeout(()=>{
-f.classList.remove("open");s.classList.remove("open");
-f=s=null;lock=false;
-message.textContent=currentMode=="normal"?"同じカードを見つけよう！":"本気モード！";
-},700);
+
+function openCard(card){
+  if(lock||card.classList.contains("open")||card.classList.contains("done"))return;
+
+  playFlip();
+  card.classList.add("open");
+
+  if(!first){
+    first=card;
+    return;
+  }
+
+  second=card;
+  lock=true;
+
+  if(first.dataset.i===second.dataset.i){
+    playOk();
+
+    first.classList.add("done");
+    second.classList.add("done");
+
+    clearCount++;
+    first=null;
+    second=null;
+    lock=false;
+    message.textContent="あたり！";
+    updateInfo();
+
+    if(clearCount===imgs.length){
+      setTimeout(()=>{
+        document.getElementById("clear").style.display="flex";
+      },300);
+    }
+  }else{
+    missCount++;
+    message.textContent="ちがうよ！";
+    updateInfo();
+
+    setTimeout(()=>{
+      first.classList.remove("open");
+      second.classList.remove("open");
+      first=null;
+      second=null;
+      lock=false;
+      message.textContent=currentMode==="normal"?"同じカードを見つけよう！":"本気モード！";
+    },700);
+  }
 }
+
+function updateInfo(){
+  remain.textContent="のこり"+(imgs.length-clearCount)+"組";
+  miss.textContent="ミス"+missCount;
 }
-function upd(){
-remain.textContent="のこり"+(imgs.length-clear)+"組";
-miss.textContent="ミス"+miss;
-}
-start();
+
+start("normal");
 </script>
-</body></html>
+</body>
+</html>
