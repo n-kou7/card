@@ -42,6 +42,40 @@ button{font-size:32px;padding:8px 40px;border:0;border-radius:16px;color:#fff;ba
 const flip=new Audio("meku.mp3");
 const ok=new Audio("sei.mp3");
 flip.preload="auto";ok.preload="auto";
+
+// iPadで音の出だしが遅れにくいように、最初のタップで先読みしておく
+let soundReady=false;
+function prepareSound(){
+  if(soundReady)return;
+  soundReady=true;
+  [flip,ok].forEach(a=>{
+    a.load();
+    a.volume=1;
+    a.play().then(()=>{
+      a.pause();
+      a.currentTime=0;
+    }).catch(()=>{});
+  });
+}
+document.addEventListener("touchstart",prepareSound,{once:true});
+document.addEventListener("mousedown",prepareSound,{once:true});
+
+function playFlip(){
+  try{
+    flip.pause();
+    flip.currentTime=0;
+    const p=flip.play();
+    if(p)p.catch(()=>{});
+  }catch(e){}
+}
+function playOk(){
+  try{
+    ok.pause();
+    ok.currentTime=0;
+    const p=ok.play();
+    if(p)p.catch(()=>{});
+  }catch(e){}
+}
 const normal=["card-02.png","card-03.png","card-04.png","card-05.png","card-06.png","card-07.png","card-08.png","card-09.png","card-10.png"];
 const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
 let currentMode="normal",imgs=normal,f=null,s=null,lock=false,clear=0,miss=0;
@@ -63,12 +97,12 @@ d.onclick=()=>open(d);game.appendChild(d);
 }
 function open(c){
 if(lock||c.classList.contains("open")||c.classList.contains("done"))return;
-flip.currentTime=0;flip.play().catch(()=>{});
+playFlip();
 c.classList.add("open");
 if(!f){f=c;return;}
 s=c;lock=true;
 if(f.dataset.i==s.dataset.i){
-ok.currentTime=0;ok.play().catch(()=>{});
+playOk();
 f.classList.add("done");s.classList.add("done");clear++;f=s=null;lock=false;message.textContent="あたり！";upd();
 if(clear==imgs.length)setTimeout(()=>document.getElementById("clear").style.display="flex",300);
 }else{
