@@ -39,43 +39,75 @@ button{font-size:32px;padding:8px 40px;border:0;border-radius:16px;color:#fff;ba
 </div>
 <div id="clear"><div>クリア！</div><button onclick="start(currentMode)">もう一回</button></div>
 <script>
-const flip=new Audio("meku.mp3");
-const ok=new Audio("sei.mp3");
-flip.preload="auto";ok.preload="auto";
+// iPad Safariで安定しやすいように、同じ音を複数用意して交互に鳴らす
+const flipPool=[
+  new Audio("meku.mp3"),
+  new Audio("meku.mp3"),
+  new Audio("meku.mp3")
+];
+const okPool=[
+  new Audio("sei.mp3"),
+  new Audio("sei.mp3"),
+  new Audio("sei.mp3")
+];
 
-// iPadで音の出だしが遅れにくいように、最初のタップで先読みしておく
+let flipIndex=0;
+let okIndex=0;
 let soundReady=false;
+
+[...flipPool,...okPool].forEach(a=>{
+  a.preload="auto";
+  a.load();
+});
+
 function prepareSound(){
   if(soundReady)return;
   soundReady=true;
-  [flip,ok].forEach(a=>{
-    a.load();
-    a.volume=1;
+
+  // iPadの音声ロック解除用。最初のタップで無音に近い状態で一瞬だけ再生する
+  [...flipPool,...okPool].forEach(a=>{
+    const oldVol=a.volume;
+    a.volume=0;
     a.play().then(()=>{
       a.pause();
       a.currentTime=0;
-    }).catch(()=>{});
+      a.volume=oldVol;
+    }).catch(()=>{
+      a.volume=oldVol;
+    });
   });
 }
+
 document.addEventListener("touchstart",prepareSound,{once:true});
 document.addEventListener("mousedown",prepareSound,{once:true});
 
 function playFlip(){
+  const a=flipPool[flipIndex];
+  flipIndex=(flipIndex+1)%flipPool.length;
+
   try{
-    flip.pause();
-    flip.currentTime=0;
-    const p=flip.play();
+    a.pause();
+    a.currentTime=0;
+    const p=a.play();
     if(p)p.catch(()=>{});
   }catch(e){}
 }
+
 function playOk(){
-  try{
-    ok.pause();
-    ok.currentTime=0;
-    const p=ok.play();
-    if(p)p.catch(()=>{});
-  }catch(e){}
+  // めくり音と同時すぎるとiPadでsei.mp3が無視されることがあるので少しだけ遅らせる
+  setTimeout(()=>{
+    const a=okPool[okIndex];
+    okIndex=(okIndex+1)%okPool.length;
+
+    try{
+      a.pause();
+      a.currentTime=0;
+      const p=a.play();
+      if(p)p.catch(()=>{});
+    }catch(e){}
+  },120);
 }
+
 const normal=["card-02.png","card-03.png","card-04.png","card-05.png","card-06.png","card-07.png","card-08.png","card-09.png","card-10.png"];
 const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
 let currentMode="normal",imgs=normal,f=null,s=null,lock=false,clear=0,miss=0;
