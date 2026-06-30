@@ -28,7 +28,7 @@ body{
   justify-content:center;
   align-items:center;
   gap:16px;
-  font-size:clamp(28px,4.2vh,40px);
+  font-size:clamp(24px,3.7vh,36px);
   font-weight:bold;
   line-height:1;
   margin:0;
@@ -91,9 +91,9 @@ body{
   flex-shrink:0;
 }
 button{
-  font-size:clamp(24px,4vh,34px);
+  font-size:clamp(22px,3.6vh,32px);
   line-height:1;
-  padding:7px 34px;
+  padding:6px 30px;
   border:0;
   border-radius:16px;
   color:white;
@@ -210,17 +210,30 @@ function fitCards(){
   const top=document.getElementById("top");
   const buttons=document.getElementById("buttons");
 
-  const gap=5;
-  const usableW=wrap.clientWidth-12;
-  const usableH=wrap.clientHeight-top.offsetHeight-buttons.offsetHeight-10;
+  const gap=4;
 
-  let cardH=(usableH-gap*(rows-1))/rows;
+  // iPad Safariのバーや表示ズレを見込んで、少し安全側に小さくする
+  const screenW=window.innerWidth || wrap.clientWidth;
+  const screenH=window.innerHeight || wrap.clientHeight;
+
+  const usableW=screenW-18;
+  const usableH=screenH-top.offsetHeight-buttons.offsetHeight-18;
+
+  // カードが縦にはみ出さないよう、縦基準を強めにする
+  let cardH=((usableH-gap*(rows-1))/rows)*0.90;
   let cardW=cardH*2/3;
 
   const maxW=(usableW-gap*(cols-1))/cols;
   if(cardW>maxW){
     cardW=maxW;
     cardH=cardW*3/2;
+  }
+
+  // 最後にもう一度、縦に必ず収まる上限をかける
+  const maxH=((usableH-gap*(rows-1))/rows)*0.92;
+  if(cardH>maxH){
+    cardH=maxH;
+    cardW=cardH*2/3;
   }
 
   document.documentElement.style.setProperty("--cardW",Math.floor(cardW)+"px");
