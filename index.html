@@ -6,7 +6,13 @@
 <title>カード神経衰弱</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff4c7}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#fff4c7;
+}
 body{
   font-family:"Hiragino Maru Gothic ProN","Arial",sans-serif;
   -webkit-user-select:none;
@@ -15,36 +21,37 @@ body{
 }
 #wrap{
   width:100vw;
+  height:100vh;
   height:100dvh;
-  padding:2px 6px 3px;
+  padding:3px 6px;
   display:flex;
   flex-direction:column;
   align-items:center;
-  overflow:hidden;
 }
 #top{
   width:100%;
   display:flex;
-  justify-content:center;
   align-items:center;
-  gap:18px;
-  font-size:clamp(24px,3.7vh,36px);
+  justify-content:center;
+  gap:22px;
+  font-size:clamp(24px,3.8vh,38px);
   font-weight:bold;
   line-height:1;
-  margin:0;
   white-space:nowrap;
+  margin:0 0 3px;
 }
+#remain{color:#222}
 #message{
   min-width:300px;
-  color:#e85b00;
   text-align:center;
+  color:#e85b00;
 }
 #game{
+  width:100%;
+  flex:1;
   display:grid;
   justify-content:center;
   align-content:center;
-  width:100%;
-  flex:1;
   gap:var(--gap,4px);
   overflow:hidden;
 }
@@ -66,228 +73,301 @@ body{
   height:100%;
   position:relative;
   transform-style:preserve-3d;
-  transition:transform .25s;
+  transition:transform .25s ease;
 }
-.card.open .inner,.card.done .inner{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden}
+.card.open .inner,
+.card.done .inner{
+  transform:rotateY(180deg);
+}
+.face{
+  position:absolute;
+  inset:0;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
 .front{transform:rotateY(180deg)}
-.face img{width:100%;height:100%;object-fit:contain;display:block}
-.card.done{animation:pop .2s}
-@keyframes pop{50%{transform:scale(1.06)}}
+.face img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  pointer-events:none;
+}
+.card.done{animation:pop .18s ease}
+@keyframes pop{50%{transform:scale(1.05)}}
 #buttons{
+  flex-shrink:0;
   display:flex;
   justify-content:center;
-  gap:10px;
-  margin:1px 0 0;
-  flex-shrink:0;
+  gap:12px;
+  margin-top:3px;
 }
 button{
-  font-size:clamp(22px,3.6vh,32px);
-  line-height:1;
-  padding:6px 30px;
   border:0;
   border-radius:16px;
+  padding:6px 30px;
+  font-size:clamp(22px,3.6vh,32px);
+  line-height:1;
+  font-weight:bold;
   color:white;
   background:#ff8a3d;
-  font-weight:bold;
 }
 #modeBtn{background:#d44}
-#clear{
+#clearBox{
   display:none;
   position:fixed;
   inset:0;
-  background:#fff4cfe8;
+  z-index:10;
+  background:rgba(255,244,199,.94);
   align-items:center;
   justify-content:center;
   flex-direction:column;
-  z-index:10;
 }
-#clear div{
+#clearText{
   font-size:64px;
   font-weight:bold;
+  color:#ff6b00;
   margin-bottom:18px;
 }
 </style>
 </head>
+
 <body>
 <div id="wrap">
   <div id="top">
-    <div id="remain"></div>
-    <div id="message"></div>
+    <div id="remain">のこり9組</div>
+    <div id="message">同じカードを見つけよう！</div>
   </div>
 
-  <div id="game"></div>
+  <div id="game" class="normal"></div>
 
   <div id="buttons">
-    <button onclick="start(currentMode)">もう一回</button>
-    <button id="modeBtn" onclick="toggleMode()">🔥本気</button>
+    <button id="restartBtn" type="button">もう一回</button>
+    <button id="modeBtn" type="button">🔥本気</button>
   </div>
 </div>
 
-<div id="clear">
-  <div>クリア！</div>
-  <button onclick="start(currentMode)">もう一回</button>
+<div id="clearBox">
+  <div id="clearText">クリア！</div>
+  <button id="clearRestartBtn" type="button">もう一回</button>
 </div>
 
 <script>
-const normal=[
-  "card-02.png","card-03.png","card-04.png",
-  "card-05.png","card-06.png","card-07.png",
-  "card-08.png","card-09.png","card-10.png"
-];
-const honki=[...normal,"card-11.png","card-12.png","card-13.png"];
+(function(){
+  "use strict";
 
-let currentMode="normal";
-let imgs=normal;
-let first=null;
-let second=null;
-let lock=false;
-let clearCount=0;
+  const backImage = "card-01.png";
 
-// 音まわりシンプル版：最初にまとめて鳴らさない
-function playFlip(){
-  try{
-    const a=new Audio("meku.mp3");
-    a.play().catch(()=>{});
-  }catch(e){}
-}
+  const normalImages = [
+    "card-02.png","card-03.png","card-04.png",
+    "card-05.png","card-06.png","card-07.png",
+    "card-08.png","card-09.png","card-10.png"
+  ];
 
-function playOk(){
-  setTimeout(()=>{
-    try{
-      const a=new Audio("sei.mp3");
-      a.play().catch(()=>{});
-    }catch(e){}
-  },420);
-}
+  const honkiImages = [
+    ...normalImages,
+    "card-11.png","card-12.png","card-13.png"
+  ];
 
-function fitCards(){
-  const cols=currentMode==="honki"?8:6;
-  const rows=3;
-  const wrap=document.getElementById("wrap");
-  const top=document.getElementById("top");
-  const buttons=document.getElementById("buttons");
+  const wrap = document.getElementById("wrap");
+  const topBar = document.getElementById("top");
+  const game = document.getElementById("game");
+  const buttons = document.getElementById("buttons");
+  const remain = document.getElementById("remain");
+  const message = document.getElementById("message");
+  const modeBtn = document.getElementById("modeBtn");
+  const restartBtn = document.getElementById("restartBtn");
+  const clearBox = document.getElementById("clearBox");
+  const clearRestartBtn = document.getElementById("clearRestartBtn");
 
-  const gap=4;
-  const screenW=window.innerWidth || wrap.clientWidth;
-  const screenH=window.innerHeight || wrap.clientHeight;
+  let currentMode = "normal";
+  let currentImages = normalImages;
+  let firstCard = null;
+  let secondCard = null;
+  let locked = false;
+  let clearCount = 0;
+  let lastFlipTime = 0;
 
-  const usableW=screenW-18;
-  const usableH=screenH-top.offsetHeight-buttons.offsetHeight-18;
-
-  let cardH=((usableH-gap*(rows-1))/rows)*0.90;
-  let cardW=cardH*2/3;
-
-  const maxW=(usableW-gap*(cols-1))/cols;
-  if(cardW>maxW){
-    cardW=maxW;
-    cardH=cardW*3/2;
+  function playFile(src, delay){
+    setTimeout(function(){
+      try{
+        const audio = new Audio(src);
+        audio.play().catch(function(){});
+      }catch(e){}
+    }, delay || 0);
   }
 
-  const maxH=((usableH-gap*(rows-1))/rows)*0.92;
-  if(cardH>maxH){
-    cardH=maxH;
-    cardW=cardH*2/3;
+  function playFlip(){
+    const now = Date.now();
+
+    // 多重タップやiPadの変な連打音を防止
+    if(now - lastFlipTime < 120) return;
+
+    lastFlipTime = now;
+    playFile("meku.mp3", 0);
   }
 
-  document.documentElement.style.setProperty("--cardW",Math.floor(cardW)+"px");
-  document.documentElement.style.setProperty("--cardH",Math.floor(cardH)+"px");
-  document.documentElement.style.setProperty("--gap",gap+"px");
-}
-
-window.addEventListener("resize",fitCards);
-window.addEventListener("orientationchange",()=>setTimeout(fitCards,300));
-
-function toggleMode(){
-  start(currentMode==="normal"?"honki":"normal");
-}
-
-function start(mode="normal"){
-  currentMode=mode;
-  imgs=mode==="honki"?honki:normal;
-
-  modeBtn.textContent=mode==="normal"?"🔥本気":"😊通常";
-  message.textContent=mode==="normal"?"同じカードを見つけよう！":"本気モード！";
-
-  game.className=mode;
-  game.innerHTML="";
-  clearCount=0;
-  first=null;
-  second=null;
-  lock=false;
-
-  document.getElementById("clear").style.display="none";
-  updateInfo();
-
-  const cards=[...imgs,...imgs].sort(()=>Math.random()-.5);
-
-  cards.forEach(im=>{
-    const card=document.createElement("div");
-    card.className="card";
-    card.dataset.i=im;
-    card.innerHTML=
-      `<div class="inner">
-        <div class="face"><img src="card-01.png"></div>
-        <div class="face front"><img src="${im}"></div>
-      </div>`;
-    card.onclick=()=>openCard(card);
-    game.appendChild(card);
-  });
-
-  requestAnimationFrame(fitCards);
-}
-
-function openCard(card){
-  if(lock||card.classList.contains("open")||card.classList.contains("done"))return;
-
-  playFlip();
-  card.classList.add("open");
-
-  if(!first){
-    first=card;
-    return;
+  function playCorrect(){
+    // めくる音と重ならないように少し遅らせる
+    playFile("sei.mp3", 430);
   }
 
-  second=card;
-  lock=true;
+  function fitCards(){
+    const cols = currentMode === "honki" ? 8 : 6;
+    const rows = 3;
+    const gap = 4;
 
-  if(first.dataset.i===second.dataset.i){
-    playOk();
+    const w = window.innerWidth || wrap.clientWidth;
+    const h = window.innerHeight || wrap.clientHeight;
 
-    first.classList.add("done");
-    second.classList.add("done");
+    const usableW = w - 18;
+    const usableH = h - topBar.offsetHeight - buttons.offsetHeight - 20;
 
-    clearCount++;
-    first=null;
-    second=null;
-    lock=false;
-    message.textContent="あたり！";
+    let cardH = ((usableH - gap * (rows - 1)) / rows) * 0.90;
+    let cardW = cardH * 2 / 3;
+
+    const maxW = (usableW - gap * (cols - 1)) / cols;
+
+    if(cardW > maxW){
+      cardW = maxW;
+      cardH = cardW * 3 / 2;
+    }
+
+    const maxH = ((usableH - gap * (rows - 1)) / rows) * 0.92;
+    if(cardH > maxH){
+      cardH = maxH;
+      cardW = cardH * 2 / 3;
+    }
+
+    document.documentElement.style.setProperty("--cardW", Math.max(30, Math.floor(cardW)) + "px");
+    document.documentElement.style.setProperty("--cardH", Math.max(45, Math.floor(cardH)) + "px");
+    document.documentElement.style.setProperty("--gap", gap + "px");
+  }
+
+  function shuffle(array){
+    for(let i = array.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = array[i];
+      array[i] = array[j];
+      array[j] = tmp;
+    }
+    return array;
+  }
+
+  function updateInfo(){
+    remain.textContent = "のこり" + (currentImages.length - clearCount) + "組";
+  }
+
+  function start(mode){
+    currentMode = mode || "normal";
+    currentImages = currentMode === "honki" ? honkiImages : normalImages;
+
+    clearBox.style.display = "none";
+    game.className = currentMode;
+    game.innerHTML = "";
+
+    firstCard = null;
+    secondCard = null;
+    locked = false;
+    clearCount = 0;
+    lastFlipTime = 0;
+
+    modeBtn.textContent = currentMode === "honki" ? "😊通常" : "🔥本気";
+    message.textContent = currentMode === "honki" ? "本気モード！" : "同じカードを見つけよう！";
     updateInfo();
 
-    if(clearCount===imgs.length){
-      setTimeout(()=>{
-        document.getElementById("clear").style.display="flex";
-      },300);
-    }
-  }else{
-    message.textContent="ちがうよ！";
+    const deck = shuffle([...currentImages, ...currentImages]);
 
-    setTimeout(()=>{
-      first.classList.remove("open");
-      second.classList.remove("open");
-      first=null;
-      second=null;
-      lock=false;
-      message.textContent=currentMode==="normal"?"同じカードを見つけよう！":"本気モード！";
-    },700);
+    deck.forEach(function(img){
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.img = img;
+
+      card.innerHTML =
+        '<div class="inner">' +
+          '<div class="face back"><img src="' + backImage + '" alt=""></div>' +
+          '<div class="face front"><img src="' + img + '" alt=""></div>' +
+        '</div>';
+
+      card.addEventListener("click", function(){
+        openCard(card);
+      });
+
+      game.appendChild(card);
+    });
+
+    requestAnimationFrame(fitCards);
+    setTimeout(fitCards, 200);
   }
-}
 
-function updateInfo(){
-  remain.textContent="のこり"+(imgs.length-clearCount)+"組";
-}
+  function openCard(card){
+    if(locked) return;
+    if(card.classList.contains("open")) return;
+    if(card.classList.contains("done")) return;
 
-start("normal");
+    playFlip();
+    card.classList.add("open");
+
+    if(!firstCard){
+      firstCard = card;
+      return;
+    }
+
+    secondCard = card;
+    locked = true;
+
+    if(firstCard.dataset.img === secondCard.dataset.img){
+      playCorrect();
+
+      firstCard.classList.add("done");
+      secondCard.classList.add("done");
+
+      clearCount++;
+      firstCard = null;
+      secondCard = null;
+      locked = false;
+
+      message.textContent = "あたり！";
+      updateInfo();
+
+      if(clearCount === currentImages.length){
+        setTimeout(function(){
+          clearBox.style.display = "flex";
+        }, 350);
+      }
+    }else{
+      message.textContent = "ちがうよ！";
+
+      setTimeout(function(){
+        firstCard.classList.remove("open");
+        secondCard.classList.remove("open");
+        firstCard = null;
+        secondCard = null;
+        locked = false;
+        message.textContent = currentMode === "honki" ? "本気モード！" : "同じカードを見つけよう！";
+      }, 700);
+    }
+  }
+
+  restartBtn.addEventListener("click", function(){
+    start(currentMode);
+  });
+
+  clearRestartBtn.addEventListener("click", function(){
+    start(currentMode);
+  });
+
+  modeBtn.addEventListener("click", function(){
+    start(currentMode === "normal" ? "honki" : "normal");
+  });
+
+  window.addEventListener("resize", fitCards);
+  window.addEventListener("orientationchange", function(){
+    setTimeout(fitCards, 300);
+  });
+
+  start("normal");
+})();
 </script>
 </body>
 </html>
