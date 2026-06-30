@@ -155,7 +155,8 @@ let lock=false;
 let clearCount=0;
 let missCount=0;
 
-// iPad Safari対策：最初に全音を一気に再生しない。ばばば音防止版。
+// iPad Safari対策：最初のタップ音を完全に鳴らさない版
+// 1回目のタップは音声許可のきっかけだけにして、実際の音は2回目以降に鳴らす。
 const flipPool=[
   new Audio("meku.mp3"),
   new Audio("meku.mp3"),
@@ -169,9 +170,10 @@ const okPool=[
 
 let flipIndex=0;
 let okIndex=0;
+let firstSoundSkip=true;
 
 [...flipPool,...okPool].forEach(a=>{
-  a.preload="auto";
+  a.preload="metadata";
   a.load();
 });
 
@@ -193,14 +195,18 @@ function playAudioFromPool(pool,indexName){
 }
 
 function playFlip(){
+  // iPadで最初にバババッと鳴るのを防ぐため、最初の1回だけ完全に無音にする
+  if(firstSoundSkip){
+    firstSoundSkip=false;
+    return;
+  }
   playAudioFromPool(flipPool,"flip");
 }
 
 function playOk(){
-  // iPadでめくり音と正解音が重なって消えるのを避けるため少し遅らせる
   setTimeout(()=>{
     playAudioFromPool(okPool,"ok");
-  },320);
+  },360);
 }
 
 
